@@ -1,25 +1,21 @@
-from fastapi import FastAPI, HTTPException, Query
+from typing import Annotated
+
+from fastapi import Depends, FastAPI, HTTPException
+
+from src.api.dependencies import pagination
+from src.fake import hotels
 
 app = FastAPI()
-
-hotels = [
-    {"id": 1, "title": "Sochi", "name": "sochi"},
-    {"id": 2, "title": "Дубай", "name": "dubai"},
-    {"id": 3, "title": "Мальдивы", "name": "maldivi"},
-    {"id": 4, "title": "Геленджик", "name": "gelendzhik"},
-    {"id": 5, "title": "Москва", "name": "moscow"},
-    {"id": 6, "title": "Казань", "name": "kazan"},
-    {"id": 7, "title": "Санкт-Петербург", "name": "spb"},
-]
 
 
 @app.get("/hotels")
 async def get_hotels(
+    pagination: Annotated[dict, Depends(pagination)],
     id: int | None = None,
     title: str | None = None,
-    page: int = Query(default=1, ge=1),
-    per_page: int = Query(default=3, ge=1, le=len(hotels)),
 ) -> list[dict]:
+    page = pagination["page"]
+    per_page = pagination["per_page"]
     res = []
     for i in hotels:
         if id and title:
@@ -66,7 +62,7 @@ async def put_hotel(
 
 
 @app.patch("/hotels/{hotel_id}")
-def patch_hotel(
+async def patch_hotel(
     hotel_id: int,
     title: str | None = None,
     name: str | None = None,
