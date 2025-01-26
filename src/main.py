@@ -1,44 +1,52 @@
-from typing import Annotated
+from fastapi import FastAPI, HTTPException, status
+from sqlalchemy import insert, select
 
-from fastapi import Depends, FastAPI, HTTPException
-
-from src.api.dependencies import pagination
+from src.api.dependencies import PaginationDep
+from src.database import async_db_conn
 from src.fake import hotels
+from src.models.hotels import HotelsOrm
+from src.schemas.hotels import Hotels
 
 app = FastAPI()
 
 
-@app.get("/hotels")
+@app.get("/hotels", response_model=list[Hotels])
 async def get_hotels(
-    pagination: Annotated[dict, Depends(pagination)],
-    id: int | None = None,
+    db: async_db_conn,
+    pagination: PaginationDep,
     title: str | None = None,
-) -> list[dict]:
-    page = pagination["page"]
-    per_page = pagination["per_page"]
-    res = []
-    for i in hotels:
-        if id and title:
-            if i["id"] == id and i["title"] == title:
-                res.append(i)
-        elif id:
-            if i["id"] == id:
-                res.append(i)
-        elif title:
-            if i["title"] == title:
-                res.append(i)
-        else:
-            res.append(i)
-    return res[(page - 1) * per_page : page * per_page]
+    location: str | None = None,
+):
+    hotels_query = select(HotelsOrm)
+    if title is not None:
+        hotels_query = hotels_query.where(HotelsOrm.title.ilike(f"%{title}%"))
+    if location is not None:
+        hotels_query = hotels_query.where(HotelsOrm.location.ilike(f"%{location}%"))
+
+    hotels_query = await db.scalars(
+        hotels_query.limit(pagination.per_page).offset(
+            pagination.per_page * (pagination.page - 1)  # type: ignore
+        )
+    )
+    hotels = hotels_query.all()
+    if not hotels:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="No hotels found"
+        )
+    return hotels
 
 
-@app.post("/hotels", status_code=201)
-async def create_hotel(title: str, name: str) -> dict:
-    hotels.append({"id": hotels[-1]["id"] + 1, "title": title, "name": name})
-    return {"message": f"The hotel {name} has been added"}
+@app.post("/hotels", status_code=status.HTTP_201_CREATED)
+async def create_hotel(db: async_db_conn, hotel_data: Hotels) -> dict:
+    add_hotel_stmt = insert(HotelsOrm).values(
+        title=hotel_data.title, location=hotel_data.location
+    )
+    await db.execute(add_hotel_stmt)
+    await db.commit()
+    return {"status_code": status.HTTP_201_CREATED, "transaction": "Successful"}
 
 
-@app.delete("/hotels/{hotel_id}", status_code=204)
+@app.delete("/hotels/{hotel_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_hotel(hotel_id: int):
     for idx, hotel in enumerate(hotels):
         if hotel["id"] == hotel_id:
