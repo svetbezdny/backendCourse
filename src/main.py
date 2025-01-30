@@ -5,6 +5,7 @@ from src.api.dependencies import PaginationDep
 from src.database import async_db_conn
 from src.fake import hotels
 from src.models.hotels import HotelsOrm
+from src.repos.hotels import HotelsRepos
 from src.schemas.hotels import Hotels
 
 app = FastAPI()
@@ -17,18 +18,12 @@ async def get_hotels(
     title: str | None = None,
     location: str | None = None,
 ):
-    hotels_query = select(HotelsOrm)
-    if title is not None:
-        hotels_query = hotels_query.where(HotelsOrm.title.ilike(f"%{title}%"))
-    if location is not None:
-        hotels_query = hotels_query.where(HotelsOrm.location.ilike(f"%{location}%"))
-
-    hotels_query = await db.scalars(
-        hotels_query.limit(pagination.per_page).offset(
-            pagination.per_page * (pagination.page - 1)  # type: ignore
-        )
+    hotels = await HotelsRepos(db).get_all(
+        title=title,
+        location=location,
+        limit=pagination.per_page,
+        offset=pagination.page,
     )
-    hotels = hotels_query.all()
     if not hotels:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="No hotels found"
@@ -38,12 +33,15 @@ async def get_hotels(
 
 @app.post("/hotels", status_code=status.HTTP_201_CREATED)
 async def create_hotel(db: async_db_conn, hotel_data: Hotels) -> dict:
-    add_hotel_stmt = insert(HotelsOrm).values(
+    hotel = await HotelsRepos(db).add(
         title=hotel_data.title, location=hotel_data.location
     )
-    await db.execute(add_hotel_stmt)
     await db.commit()
-    return {"status_code": status.HTTP_201_CREATED, "transaction": "Successful"}
+    return {
+        "status_code": status.HTTP_201_CREATED,
+        "transaction": "Successful",
+        "data": {col.name: getattr(hotel, col.name) for col in hotel.__table__.columns},
+    }
 
 
 @app.delete("/hotels/{hotel_id}", status_code=status.HTTP_204_NO_CONTENT)
