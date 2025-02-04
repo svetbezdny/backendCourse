@@ -1,10 +1,8 @@
 from fastapi import FastAPI, HTTPException, status
-from sqlalchemy import insert, select
 
 from src.api.dependencies import PaginationDep
 from src.database import async_db_conn
 from src.fake import hotels
-from src.models.hotels import HotelsOrm
 from src.repos.hotels import HotelsRepos
 from src.schemas.hotels import Hotels
 
@@ -31,40 +29,51 @@ async def get_hotels(
     return hotels
 
 
-@app.post("/hotels", status_code=status.HTTP_201_CREATED)
-async def create_hotel(db: async_db_conn, hotel_data: Hotels) -> dict:
-    hotel = await HotelsRepos(db).add(
-        title=hotel_data.title, location=hotel_data.location
-    )
+@app.post("/hotels")
+async def create_hotel(db: async_db_conn, hotel_data: Hotels):
+    hotel = await HotelsRepos(db).add(hotel_data)
     await db.commit()
     return {
         "status_code": status.HTTP_201_CREATED,
         "transaction": "Successful",
-        "data": {col.name: getattr(hotel, col.name) for col in hotel.__table__.columns},
+        "data": hotel,
     }
 
 
-@app.delete("/hotels/{hotel_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_hotel(hotel_id: int):
-    for idx, hotel in enumerate(hotels):
-        if hotel["id"] == hotel_id:
-            hotels.pop(idx)
-            break
+@app.delete("/hotels/{hotel_id}")
+async def delete_hotel(db: async_db_conn, hotel_id: int):
+    hotel = await HotelsRepos(db).get_one_or_none(id=hotel_id)
+    if hotel is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Hotel with id {hotel_id} not found",
+        )
+    await HotelsRepos(db).delete(id=hotel_id)
+    await db.commit()
+    return {
+        "status_code": status.HTTP_200_OK,
+        "transaction": f"Hotel with id {hotel_id} was deleted",
+    }
 
 
 @app.put("/hotels/{hotel_id}")
 async def put_hotel(
+    db: async_db_conn,
+    hotel_data: Hotels,
     hotel_id: int,
-    title: str,
-    name: str,
 ):
-    for hotel in hotels:
-        if hotel["id"] == hotel_id:
-            hotel["title"] = title
-            hotel["name"] = name
-            return {"message": f"The hotel {name} has been changed"}
-        else:
-            raise HTTPException(status_code=404, detail="Hotel was not found")
+    hotel = await HotelsRepos(db).get_one_or_none(id=hotel_id)
+    if hotel is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Hotel with id {hotel_id} not found",
+        )
+    await HotelsRepos(db).edit(hotel_data, id=hotel_id)
+    await db.commit()
+    return {
+        "status_code": status.HTTP_200_OK,
+        "transaction": f"Hotel with id {hotel_id} was updated",
+    }
 
 
 @app.patch("/hotels/{hotel_id}")
