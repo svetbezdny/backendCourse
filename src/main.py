@@ -2,9 +2,8 @@ from fastapi import FastAPI, HTTPException, status
 
 from src.api.dependencies import PaginationDep
 from src.database import async_db_conn
-from src.fake import hotels
 from src.repos.hotels import HotelsRepos
-from src.schemas.hotels import Hotels
+from src.schemas.hotels import HotelPATCH, Hotels
 
 app = FastAPI()
 
@@ -27,6 +26,17 @@ async def get_hotels(
             status_code=status.HTTP_404_NOT_FOUND, detail="No hotels found"
         )
     return hotels
+
+
+@app.get("/{hotel_id}", response_model=Hotels)
+async def get_hotel(db: async_db_conn, hotel_id: int):
+    hotel = await HotelsRepos(db).get_one_or_none(id=hotel_id)
+    if hotel is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Hotel with id {hotel_id} not found",
+        )
+    return hotel
 
 
 @app.post("/hotels")
@@ -78,19 +88,22 @@ async def put_hotel(
 
 @app.patch("/hotels/{hotel_id}")
 async def patch_hotel(
+    db: async_db_conn,
+    hotel_data: HotelPATCH,
     hotel_id: int,
-    title: str | None = None,
-    name: str | None = None,
 ):
-    for hotel in hotels:
-        if hotel["id"] == hotel_id:
-            if title:
-                hotel["title"] = title
-            if name:
-                hotel["name"] = name
-            return {"message": f"The hotel with id {hotel_id} has been changed"}
-        else:
-            raise HTTPException(status_code=404, detail="Hotel was not found")
+    hotel = await HotelsRepos(db).get_one_or_none(id=hotel_id)
+    if hotel is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Hotel with id {hotel_id} not found",
+        )
+    await HotelsRepos(db).edit(hotel_data, exclude_unset=True, id=hotel_id)
+    await db.commit()
+    return {
+        "status_code": status.HTTP_200_OK,
+        "transaction": f"Hotel with id {hotel_id} was updated",
+    }
 
 
 if __name__ == "__main__":
