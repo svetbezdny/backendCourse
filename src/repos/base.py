@@ -8,6 +8,7 @@ from sqlalchemy.orm import DeclarativeMeta
 
 class BaseRepos:
     model: Type[DeclarativeMeta]
+    schema: BaseModel
 
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
@@ -15,17 +16,28 @@ class BaseRepos:
     async def get_all(self, *args, **kwargs):
         query = select(self.model)
         result = await self.session.scalars(query)
-        return result.all()
+        return list(
+            map(
+                lambda x: self.schema.model_validate(x, from_attributes=True),
+                result.all(),
+            )
+        )
 
     async def get_one_or_none(self, **kwargs):
         query = select(self.model).filter_by(**kwargs)
         result = await self.session.execute(query)
-        return result.scalar_one_or_none()
+        res = result.scalar_one_or_none()
+        if res:
+            return self.schema.model_validate(res, from_attributes=True)
+        return None
 
     async def add(self, data: BaseModel):
         stmt = insert(self.model).values(**data.model_dump()).returning(self.model)
         result = await self.session.execute(stmt)
-        return result.scalar_one()
+        res = result.scalar_one_or_none()
+        if res:
+            return self.schema.model_validate(res, from_attributes=True)
+        return None
 
     async def edit(
         self, data: BaseModel, exclude_unset: bool = False, **filter_by
