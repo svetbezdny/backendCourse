@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     DB_PASS: str
     SECRET_KEY: str
     ALGORITHM: str
+    ACCESS_TOKEN_EXPIRE_MINUTES: int
 
     @property
     def DB_URL(self):
