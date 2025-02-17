@@ -1,7 +1,6 @@
-from typing import Optional
+from fastapi import APIRouter, HTTPException, Response, status
 
-from fastapi import APIRouter, HTTPException, Request, Response, status
-
+from src.api.dependencies import UserIdDep
 from src.database import async_db_conn
 from src.repos.users import UsersRepos
 from src.schemas.users import UserAdd, UserRequest, UserRequestAdd
@@ -49,7 +48,13 @@ async def login_user(db: async_db_conn, data: UserRequest, response: Response):
     return {"access_token": access_token}
 
 
-@router.get("/only_auth")
-async def only_auth(request: Request) -> Optional[str]:
-    access_token = request.cookies.get("access_token")
-    return access_token
+@router.get("/me")
+async def get_me(db: async_db_conn, user_id: UserIdDep):
+    user_data = await UsersRepos(db).get_one_or_none(id=user_id)
+    if user_data:
+        return user_data
+
+
+@router.get("/logout", status_code=status.HTTP_204_NO_CONTENT)
+async def logout(response: Response):
+    response.delete_cookie("access_token")

@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
 import jwt
+from fastapi import HTTPException, status
 from passlib.context import CryptContext
 
 from src.config import settings
@@ -24,3 +25,14 @@ class AuthService:
 
     def hash_password(self, password: str) -> str:
         return self.pwd_context.hash(password)
+
+    def decode_jwt_token(self, token: str) -> dict:
+        try:
+            payload = jwt.decode(
+                token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+            )
+            return payload
+        except jwt.DecodeError:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
+            )

@@ -38,6 +38,10 @@ class UserAdd(BaseModel):
 
 
 class User(BaseModel):
+    first_name: str
+    last_name: Optional[str]
+    age: int = Field(ge=0, lt=150)
+    city: Optional[str] = None
     id: int
     email: EmailStr
 
