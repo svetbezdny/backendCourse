@@ -55,6 +55,6 @@ async def get_me(db: async_db_conn, user_id: UserIdDep):
         return user_data
 
 
-@router.get("/logout", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 async def logout(response: Response):
     response.delete_cookie("access_token")

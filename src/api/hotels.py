@@ -8,7 +8,7 @@ from src.schemas.hotels import Hotel, HotelAdd, HotelPATCH
 router = APIRouter(prefix="/hotels", tags=["Hotels"])
 
 
-@router.get("/hotels", response_model=list[Hotel])
+@router.get("/", response_model=list[Hotel])
 async def get_hotels(
     db: async_db_conn,
     pagination: PaginationDep,
@@ -39,7 +39,7 @@ async def get_hotel(db: async_db_conn, hotel_id: int):
     return hotel
 
 
-@router.post("/hotels", status_code=status.HTTP_201_CREATED)
+@router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_hotel(db: async_db_conn, hotel_data: HotelAdd):
     hotel = await HotelsRepos(db).add(hotel_data)
     await db.commit()
@@ -49,7 +49,7 @@ async def create_hotel(db: async_db_conn, hotel_data: HotelAdd):
     }
 
 
-@router.delete("/hotels/{hotel_id}")
+@router.delete("/{hotel_id}")
 async def delete_hotel(db: async_db_conn, hotel_id: int):
     hotel = await HotelsRepos(db).get_one_or_none(id=hotel_id)
     if hotel is None:
@@ -64,12 +64,8 @@ async def delete_hotel(db: async_db_conn, hotel_id: int):
     }
 
 
-@router.put("/hotels/{hotel_id}")
-async def put_hotel(
-    db: async_db_conn,
-    hotel_data: HotelAdd,
-    hotel_id: int,
-):
+@router.put("/{hotel_id}")
+async def put_hotel(db: async_db_conn, hotel_data: HotelAdd, hotel_id: int):
     hotel = await HotelsRepos(db).get_one_or_none(id=hotel_id)
     if hotel is None:
         raise HTTPException(
@@ -83,12 +79,8 @@ async def put_hotel(
     }
 
 
-@router.patch("/hotels/{hotel_id}")
-async def patch_hotel(
-    db: async_db_conn,
-    hotel_data: HotelPATCH,
-    hotel_id: int,
-):
+@router.patch("/{hotel_id}")
+async def patch_hotel(db: async_db_conn, hotel_data: HotelPATCH, hotel_id: int):
     hotel = await HotelsRepos(db).get_one_or_none(id=hotel_id)
     if hotel is None:
         raise HTTPException(
