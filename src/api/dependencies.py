@@ -1,9 +1,11 @@
-from typing import Annotated
+from typing import Annotated, AsyncGenerator, Optional
 
 from fastapi import Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel
 
+from src.database import async_session_maker
 from src.services.auth import AuthService
+from src.utils.db_manager import DBManager
 
 
 class PaginationParams(BaseModel):
@@ -21,10 +23,18 @@ def get_token(request: Request) -> str:
     )
 
 
-def get_current_user_id(access_token: Annotated[str, Depends(get_token)]) -> int:
+def get_current_user_id(
+    access_token: Annotated[str, Depends(get_token)],
+) -> Optional[int]:
     jwt_data = AuthService().decode_jwt_token(access_token)
     return jwt_data.get("user_id")
 
 
+async def get_db() -> AsyncGenerator[DBManager, None]:
+    async with DBManager(session_factory=async_session_maker) as db:
+        yield db
+
+
 PaginationDep = Annotated[PaginationParams, Depends()]
 UserIdDep = Annotated[int, Depends(get_current_user_id)]
+async_db_conn = Annotated[DBManager, Depends(get_db)]
