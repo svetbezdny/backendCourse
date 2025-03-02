@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
 
-from src.api.dependencies import async_db_conn
+from src.api.dependencies import UserIdDep, async_db_conn
 from src.schemas.bookings import BookingsAdd, BookingsRequest
 
 router = APIRouter(prefix="/bookings", tags=["Bookings"])
@@ -31,3 +31,18 @@ async def create_booking(
         "transaction": "Successful",
         "data": booking,
     }
+
+
+@router.get("/", response_model=list[BookingsRequest])
+async def get_all_bookings(db: async_db_conn):
+    all_bookings = await db.bookings.get_all()
+    if not all_bookings:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No bookings")
+    return all_bookings
+
+
+@router.get("/me", response_model=list[BookingsRequest])
+async def get_my_bookings(db: async_db_conn, user_id: UserIdDep):
+    user_data = await db.users.get_one_or_none(id=user_id)
+    my_bookings = await db.bookings.get_all(user_id=user_data.id)
+    return my_bookings

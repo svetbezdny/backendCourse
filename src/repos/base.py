@@ -14,7 +14,7 @@ class BaseRepos:
         self.session = session
 
     async def get_all(self, *args, **kwargs):
-        query = select(self.model)
+        query = select(self.model).filter_by(*args, **kwargs)
         result = await self.session.scalars(query)
         return list(
             map(
