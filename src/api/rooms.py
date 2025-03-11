@@ -1,3 +1,5 @@
+from datetime import date
+
 from fastapi import APIRouter, HTTPException, status
 
 from src.api.dependencies import async_db_conn
@@ -8,8 +10,12 @@ router = APIRouter(prefix="/hotels", tags=["Rooms"])
 
 
 @router.get("/{hotel_id}/rooms", response_model=list[Room])
-async def get_all_rooms(db: async_db_conn, hotel_id: int):
-    rooms = await db.rooms.get_all(hotel_id=hotel_id)
+async def get_all_rooms(
+    db: async_db_conn, hotel_id: int, date_from: date, date_to: date
+):
+    rooms = await db.rooms.get_filtered_by_time(
+        hotel_id=hotel_id, date_from=date_from, date_to=date_to
+    )
     if not rooms:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="No rooms found"
@@ -42,21 +48,6 @@ async def create_room(db: async_db_conn, hotel_id: int, room_data: RoomAddReques
     return {
         "transaction": "Successful",
         "data": room,
-    }
-
-
-@router.delete("/{hotel_id}/rooms/{room_id}")
-async def delete_room(db: async_db_conn, hotel_id: int, room_id: int):
-    room = await db.rooms.get_one_or_none(hotel_id=hotel_id, id=room_id)
-    if room is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Room with id {room_id} not found",
-        )
-    await db.rooms.delete(hotel_id=hotel_id, id=room_id)
-    await db.commit()
-    return {
-        "transaction": f"Room with id {room_id} was deleted",
     }
 
 
@@ -94,4 +85,19 @@ async def patch_room(
     await db.commit()
     return {
         "transaction": f"Room with id {room_id} was updated",
+    }
+
+
+@router.delete("/{hotel_id}/rooms/{room_id}")
+async def delete_room(db: async_db_conn, hotel_id: int, room_id: int):
+    room = await db.rooms.get_one_or_none(hotel_id=hotel_id, id=room_id)
+    if room is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Room with id {room_id} not found",
+        )
+    await db.rooms.delete(hotel_id=hotel_id, id=room_id)
+    await db.commit()
+    return {
+        "transaction": f"Room with id {room_id} was deleted",
     }

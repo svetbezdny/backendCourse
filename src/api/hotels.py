@@ -1,4 +1,6 @@
-from fastapi import APIRouter, HTTPException, status
+from datetime import date
+
+from fastapi import APIRouter, HTTPException, Query, status
 
 from src.api.dependencies import PaginationDep, async_db_conn
 from src.schemas.hotels import Hotel, HotelAdd, HotelPATCH
@@ -12,12 +14,16 @@ async def get_hotels(
     pagination: PaginationDep,
     title: str | None = None,
     location: str | None = None,
+    date_from: date = Query(),
+    date_to: date = Query(),
 ):
-    hotels = await db.hotels.get_all(
-        title=title,
-        location=location,
+    hotels = await db.hotels.get_filtered_by_time(
+        date_from=date_from,
+        date_to=date_to,
         limit=pagination.per_page,
         offset=pagination.page,
+        title=title,
+        location=location,
     )
     if not hotels:
         raise HTTPException(
@@ -44,21 +50,6 @@ async def create_hotel(db: async_db_conn, hotel_data: HotelAdd):
     return {
         "transaction": "Successful",
         "data": hotel,
-    }
-
-
-@router.delete("/{hotel_id}")
-async def delete_hotel(db: async_db_conn, hotel_id: int):
-    hotel = await db.hotels.get_one_or_none(id=hotel_id)
-    if hotel is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Hotel with id {hotel_id} not found",
-        )
-    await db.hotels.delete(id=hotel_id)
-    await db.commit()
-    return {
-        "transaction": f"Hotel with id {hotel_id} was deleted",
     }
 
 
@@ -89,4 +80,19 @@ async def patch_hotel(db: async_db_conn, hotel_data: HotelPATCH, hotel_id: int):
     await db.commit()
     return {
         "transaction": f"Hotel with id {hotel_id} was updated",
+    }
+
+
+@router.delete("/{hotel_id}")
+async def delete_hotel(db: async_db_conn, hotel_id: int):
+    hotel = await db.hotels.get_one_or_none(id=hotel_id)
+    if hotel is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Hotel with id {hotel_id} not found",
+        )
+    await db.hotels.delete(id=hotel_id)
+    await db.commit()
+    return {
+        "transaction": f"Hotel with id {hotel_id} was deleted",
     }

@@ -7,6 +7,13 @@ from src.services.auth import AuthService
 router = APIRouter(prefix="/auth", tags=["Authorization and authentication"])
 
 
+@router.get("/me")
+async def get_me(db: async_db_conn, user_id: UserIdDep):
+    user_data = await db.users.get_one_or_none(id=user_id)
+    if user_data:
+        return user_data
+
+
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register_user(db: async_db_conn, data: UserRequestAdd):
     existing_user = await db.users.get_one_or_none(email=data.email)
@@ -44,13 +51,6 @@ async def login_user(db: async_db_conn, data: UserRequest, response: Response):
     access_token = AuthService().create_jwt_token({"user_id": user.id})
     response.set_cookie("access_token", access_token)
     return {"access_token": access_token}
-
-
-@router.get("/me")
-async def get_me(db: async_db_conn, user_id: UserIdDep):
-    user_data = await db.users.get_one_or_none(id=user_id)
-    if user_data:
-        return user_data
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
