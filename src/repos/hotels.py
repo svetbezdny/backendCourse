@@ -21,7 +21,7 @@ class HotelsRepos(BaseRepos):
         offset: int,
         title: str | None = None,
         location: str | None = None,
-    ):
+    ) -> list:
         rooms_ids = rooms_ids_for_booking(date_from, date_to)
         hotels_ids = (
             select(RoomsOrm.hotel_id)
