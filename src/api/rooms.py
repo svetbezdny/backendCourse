@@ -3,6 +3,7 @@ from datetime import date
 from fastapi import APIRouter, HTTPException, status
 
 from src.api.dependencies import async_db_conn
+from src.schemas.facilities import RoomFacilityAdd
 from src.schemas.rooms import (Room, RoomAdd, RoomAddRequest, RoomPatch,
                                RoomPatchRequest)
 
@@ -44,6 +45,12 @@ async def create_room(db: async_db_conn, hotel_id: int, room_data: RoomAddReques
             detail=f"Hotel with id {_room_data.hotel_id} not found",
         )
     room = await db.rooms.add(_room_data)
+
+    rooms_fac_data = [
+        RoomFacilityAdd(room_id=room.id, facility_id=f_id)
+        for f_id in room_data.facility_ids
+    ]
+    await db.rooms_facilities.add_bulk(rooms_fac_data)
     await db.commit()
     return {
         "transaction": "Successful",
@@ -62,6 +69,7 @@ async def put_room(
             detail=f"Room with id {room_id} not found",
         )
     await db.rooms.edit(room_data, id=room_id)
+
     await db.commit()
     return {
         "transaction": f"Room with id {room_id} was updated",

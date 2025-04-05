@@ -1,5 +1,5 @@
 from src.repos.bookings import BookingsRepos
-from src.repos.facilities import FacilitiesRepos
+from src.repos.facilities import FacilitiesRepos, RoomsFacilitiesRepos
 from src.repos.hotels import HotelsRepos
 from src.repos.rooms import RoomsRepos
 from src.repos.users import UsersRepos
@@ -17,6 +17,7 @@ class DBManager:
         self.users = UsersRepos(self.session)
         self.bookings = BookingsRepos(self.session)
         self.facilities = FacilitiesRepos(self.session)
+        self.rooms_facilities = RoomsFacilitiesRepos(self.session)
 
         return self
 
