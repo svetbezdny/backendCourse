@@ -1,19 +1,23 @@
 from fastapi import APIRouter, HTTPException, status
+from fastapi_cache.decorator import cache
 
 from src.api.dependencies import async_db_conn
+from src.config import settings
 from src.schemas.facilities import Facility
 
 router = APIRouter(prefix="/facilities", tags=["Facilities"])
 
 
 @router.get("/", response_model=list[Facility])
+@cache(expire=settings.REDIS_EXPIRE_SEC)
 async def get_all_facilities(db: async_db_conn):
-    all_facilities = await db.facilities.get_all()
-    if not all_facilities:
+    facilities_db = await db.facilities.get_all()
+    if not facilities_db:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="No facilities found"
         )
-    return all_facilities
+
+    return facilities_db
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)

@@ -1,14 +1,13 @@
-from typing import Type
-
 from pydantic import BaseModel
 from sqlalchemy import delete, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import DeclarativeMeta
+
+from src.repos.mappers.base import DataMapper
 
 
 class BaseRepos:
-    model: Type[DeclarativeMeta]
-    schema: BaseModel
+    model = None
+    mapper: DataMapper
 
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
@@ -18,7 +17,7 @@ class BaseRepos:
         result = await self.session.scalars(query)
         return list(
             map(
-                lambda x: self.schema.model_validate(x, from_attributes=True),
+                lambda x: self.mapper.map_to_domain_entity(x),
                 result.all(),
             )
         )
@@ -28,7 +27,7 @@ class BaseRepos:
         result = await self.session.execute(query)
         res = result.scalar_one_or_none()
         if res:
-            return self.schema.model_validate(res, from_attributes=True)
+            return self.mapper.map_to_domain_entity(res)
         return None
 
     async def add(self, data: BaseModel):
@@ -36,7 +35,7 @@ class BaseRepos:
         result = await self.session.execute(stmt)
         res = result.scalar_one_or_none()
         if res:
-            return self.schema.model_validate(res, from_attributes=True)
+            return self.mapper.map_to_domain_entity(res)
         return None
 
     async def add_bulk(self, data: list[BaseModel]):

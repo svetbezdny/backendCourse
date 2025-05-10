@@ -1,14 +1,17 @@
 from datetime import date
 
 from fastapi import APIRouter, HTTPException, Query, status
+from fastapi_cache.decorator import cache
 
 from src.api.dependencies import PaginationDep, async_db_conn
+from src.config import settings
 from src.schemas.hotels import Hotel, HotelAdd, HotelPATCH
 
 router = APIRouter(prefix="/hotels", tags=["Hotels"])
 
 
 @router.get("/", response_model=list[Hotel])
+@cache(expire=settings.REDIS_EXPIRE_SEC)
 async def get_hotels(
     db: async_db_conn,
     pagination: PaginationDep,
