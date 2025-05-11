@@ -1,6 +1,7 @@
 import sys
 from functools import wraps
 from pathlib import Path
+from random import choice
 from typing import Optional
 
 import orjson
@@ -23,7 +24,7 @@ def memo(expire: Optional[int] = None):
             for k, v in kwargs.items():
                 if k != "request":
                     request_params_lst.append(f"{k}_{v}")
-            redis_key = "_".join(request_params_lst)
+            redis_key = f"{func.__name__}_" + "_".join(request_params_lst)
 
             await redis_manager.connect()
             cache_data = await redis_manager.get(key=redis_key)
@@ -46,7 +47,7 @@ def memo(expire: Optional[int] = None):
 
 
 @app.get("/fib")
-@memo(expire=settings.REDIS_EXPIRE_SEC)
+@memo()
 async def fibonacci(n: int = Query(ge=0, le=93)) -> dict:
     a, b = 0, 1
     if n == 0:
@@ -57,6 +58,14 @@ async def fibonacci(n: int = Query(ge=0, le=93)) -> dict:
         for i in range(1, n):
             a, b = b, a + b
         return {"result": b}
+
+
+@app.get("/rand")
+@memo(expire=5)
+async def random() -> dict:
+    s = range(100)
+    r = choice(s)
+    return {"result": r}
 
 
 if __name__ == "__main__":
