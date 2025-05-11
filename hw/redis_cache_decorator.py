@@ -11,7 +11,6 @@ sys.path.append(str(Path(__file__).parents[1]))
 
 
 from src import redis_manager
-from src.config import settings
 
 app = FastAPI()
 
