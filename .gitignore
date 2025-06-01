@@ -3,6 +3,7 @@ __pycache__/
 .venv/
 .mypy/
 .env
+.test.env
 .DS_Store
 *.jpg
 uv.lock
