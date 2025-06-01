@@ -1,7 +1,11 @@
+from typing import Literal
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    MODE: Literal["local", "test", "dev", "prod"]
+
     DB_NAME: str
     DB_HOST: str
     DB_LOGIN: str
@@ -19,7 +23,11 @@ class Settings(BaseSettings):
     def DB_URL(self):
         return f"postgresql+asyncpg://{self.DB_LOGIN}:{self.DB_PASS}@{self.DB_HOST}/{self.DB_NAME}"
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    @property
+    def REDIS_URL(self):
+        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}"
+
+    model_config = SettingsConfigDict(env_file=".env")
 
 
 settings = Settings()  # type: ignore
