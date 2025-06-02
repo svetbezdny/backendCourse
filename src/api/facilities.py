@@ -10,7 +10,7 @@ router = APIRouter(prefix="/facilities", tags=["Facilities"])
 
 
 @router.get("/", response_model=list[Facility])
-@cache(expire=settings.REDIS_EXPIRE_SEC)
+# @cache(expire=settings.REDIS_EXPIRE_SEC)
 async def get_all_facilities(db: async_db_conn):
     facilities_db = await db.facilities.get_all()
     if not facilities_db:
@@ -26,8 +26,8 @@ async def create_facility(db: async_db_conn, facility_data: Facility):
     facility = await db.facilities.add(facility_data)
     await db.commit()
 
-    test_task.delay()
-    random_number.delay()
+    # test_taskmber..delay()
+    # random_nudelay()
 
     return {
         "transaction": "Successful",
