@@ -11,7 +11,7 @@ router = APIRouter(prefix="/hotels", tags=["Hotels"])
 
 
 @router.get("/", response_model=list[Hotel])
-# @cache(expire=settings.REDIS_EXPIRE_SEC)
+@cache(expire=settings.REDIS_EXPIRE_SEC)
 async def get_hotels(
     db: async_db_conn,
     pagination: PaginationDep,

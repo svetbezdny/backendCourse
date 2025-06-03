@@ -1,15 +1,20 @@
+from unittest import mock
+
 import orjson
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from src.api.dependencies import get_db
-from src.config import settings
-from src.database import Base, async_session_maker_null_pool, engine_null_pool
-from src.main import app
-from src.models import *  # noqa: F403
-from src.schemas.hotels import HotelAdd
-from src.schemas.rooms import RoomAdd
-from src.utils.db_manager import DBManager
+mock.patch("fastapi_cache.decorator.cache", lambda *args, **kwargs: lambda f: f).start()
+
+from src.api.dependencies import get_db  # noqa: E402
+from src.config import settings  # noqa: E402
+from src.database import (Base, async_session_maker_null_pool,  # noqa: E402
+                          engine_null_pool)
+from src.main import app  # noqa: E402
+from src.models import *  # noqa: F403,  E402
+from src.schemas.hotels import HotelAdd  # noqa: E402
+from src.schemas.rooms import RoomAdd  # noqa: E402
+from src.utils.db_manager import DBManager  # noqa: E402
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -32,7 +37,7 @@ app.dependency_overrides[get_db] = get_db_null_pool
 
 
 @pytest.fixture(scope="session", autouse=True)
-async def database_init(check_test_mode):
+async def database_init():
     async with engine_null_pool.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
@@ -76,3 +81,13 @@ async def register_user(ac, database_init):
         },
     )
     assert response.status_code == 201
+
+
+@pytest.fixture(scope="session", autouse=True)
+async def authenticated_ac(ac, register_user):
+    response = await ac.post(
+        "/auth/login", json={"email": "test@test.com", "password": "qwerty1234"}
+    )
+    assert response.status_code == 200
+    assert "access_token" in response.cookies
+    yield ac

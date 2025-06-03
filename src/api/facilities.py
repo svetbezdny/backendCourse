@@ -10,7 +10,7 @@ router = APIRouter(prefix="/facilities", tags=["Facilities"])
 
 
 @router.get("/", response_model=list[Facility])
-# @cache(expire=settings.REDIS_EXPIRE_SEC)
+@cache(expire=settings.REDIS_EXPIRE_SEC)
 async def get_all_facilities(db: async_db_conn):
     facilities_db = await db.facilities.get_all()
     if not facilities_db:
