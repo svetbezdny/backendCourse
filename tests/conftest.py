@@ -8,8 +8,8 @@ mock.patch("fastapi_cache.decorator.cache", lambda *args, **kwargs: lambda f: f)
 
 from src.api.dependencies import get_db  # noqa: E402
 from src.config import settings  # noqa: E402
-from src.database import (Base, async_session_maker_null_pool,  # noqa: E402
-                          engine_null_pool)
+from src.database import async_session_maker_null_pool  # noqa: E402
+from src.database import Base, engine_null_pool  # noqa: E402
 from src.main import app  # noqa: E402
 from src.models import *  # noqa: F403,  E402
 from src.schemas.hotels import HotelAdd  # noqa: E402
@@ -83,7 +83,7 @@ async def register_user(ac, database_init):
     assert response.status_code == 201
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session")
 async def authenticated_ac(ac, register_user):
     response = await ac.post(
         "/auth/login", json={"email": "test@test.com", "password": "qwerty1234"}

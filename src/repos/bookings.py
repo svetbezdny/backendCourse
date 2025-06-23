@@ -15,3 +15,5 @@ class BookingsRepos(BaseRepos):
         query = select(self.model).filter(self.model.date_from == date.today())
         result = await self.session.execute(query)
         return [self.mapper.map_to_domain_entity(b) for b in result.scalars().all()]
+
+    async def add_booking(self): ...

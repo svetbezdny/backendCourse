@@ -10,7 +10,7 @@ from src.schemas.hotels import Hotel, HotelAdd, HotelPATCH
 router = APIRouter(prefix="/hotels", tags=["Hotels"])
 
 
-@router.get("/", response_model=list[Hotel])
+@router.get("", response_model=list[Hotel])
 @cache(expire=settings.REDIS_EXPIRE_SEC)
 async def get_hotels(
     db: async_db_conn,
@@ -46,7 +46,7 @@ async def get_hotel(db: async_db_conn, hotel_id: int):
     return hotel
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED)
 async def create_hotel(db: async_db_conn, hotel_data: HotelAdd):
     hotel = await db.hotels.add(hotel_data)
     await db.commit()

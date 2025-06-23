@@ -6,7 +6,7 @@ from src.schemas.bookings import BookingsAdd, BookingsRequest
 router = APIRouter(prefix="/bookings", tags=["Bookings"])
 
 
-@router.get("/", response_model=list[BookingsRequest])
+@router.get("", response_model=list[BookingsRequest])
 async def get_all_bookings(db: async_db_conn):
     all_bookings = await db.bookings.get_all()
     if not all_bookings:
@@ -22,9 +22,9 @@ async def get_my_bookings(db: async_db_conn, user_id: UserIdDep):
     return my_bookings
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED)
 async def create_booking(
-    db: async_db_conn, user_id: int, bookings_data: BookingsRequest
+    db: async_db_conn, user_id: UserIdDep, bookings_data: BookingsRequest
 ):
     user = await db.users.get_one_or_none(id=user_id)
     if not user:

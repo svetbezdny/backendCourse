@@ -9,7 +9,7 @@ from src.tasks.tasks import random_number, test_task
 router = APIRouter(prefix="/facilities", tags=["Facilities"])
 
 
-@router.get("/", response_model=list[Facility])
+@router.get("", response_model=list[Facility])
 @cache(expire=settings.REDIS_EXPIRE_SEC)
 async def get_all_facilities(db: async_db_conn):
     facilities_db = await db.facilities.get_all()
@@ -21,7 +21,7 @@ async def get_all_facilities(db: async_db_conn):
     return facilities_db
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED)
 async def create_facility(db: async_db_conn, facility_data: Facility):
     facility = await db.facilities.add(facility_data)
     await db.commit()
