@@ -33,6 +33,7 @@ async def create_booking(
             detail=f"No user with id {user_id}",
         )
     room = await db.rooms.get_one_or_none(id=bookings_data.room_id)
+    hotel = await db.hotels.get_one_or_none(id=room.hotel_id)
     if not room:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -41,7 +42,8 @@ async def create_booking(
     bookings_data_ = BookingsAdd(
         user_id=user_id, price=room.price, **bookings_data.model_dump()
     )
-    booking = await db.bookings.add(bookings_data_)
+    # booking = await db.bookings.add(bookings_data_)
+    booking = await db.bookings.add_booking(bookings_data_, hotel.id)
     await db.commit()
     return {
         "transaction": "Successful",
