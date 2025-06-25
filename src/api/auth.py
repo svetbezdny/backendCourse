@@ -49,10 +49,21 @@ async def login_user(db: async_db_conn, data: UserRequest, response: Response):
             detail="Incorrect password",
         )
     access_token = AuthService().create_jwt_token({"user_id": user.id})
-    response.set_cookie("access_token", access_token)
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        path="/",
+        httponly=True,
+        samesite="lax",
+    )
     return {"access_token": access_token}
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 async def logout(response: Response):
-    response.delete_cookie("access_token")
+    response.delete_cookie(
+        key="access_token",
+        path="/",
+        httponly=True,
+        samesite="lax",
+    )
