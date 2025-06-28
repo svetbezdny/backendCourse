@@ -1,5 +1,10 @@
+import typing
+
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+if typing.TYPE_CHECKING:
+    from src.models.facilities import FacilitiesOrm
 
 from src.database import Base
 

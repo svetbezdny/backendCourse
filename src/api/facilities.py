@@ -4,7 +4,6 @@ from fastapi_cache.decorator import cache
 from src.api.dependencies import async_db_conn
 from src.config import settings
 from src.schemas.facilities import Facility
-from src.tasks.tasks import random_number, test_task
 
 router = APIRouter(prefix="/facilities", tags=["Facilities"])
 
@@ -26,10 +25,7 @@ async def create_facility(db: async_db_conn, facility_data: Facility):
     facility = await db.facilities.add(facility_data)
     await db.commit()
 
-    # test_taskmber..delay()
-    # random_nudelay()
-
     return {
-        "transaction": "Successful",
+        "message": "Successful",
         "data": facility,
     }

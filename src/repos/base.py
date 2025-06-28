@@ -1,13 +1,18 @@
+from typing import Sequence
+
 from pydantic import BaseModel
 from sqlalchemy import delete, insert, select, update
+from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.database import Base
+from src.exceptions import ObjectNotFoundException
 from src.repos.mappers.base import DataMapper
 
 
 class BaseRepos:
-    model = None
-    mapper: DataMapper
+    model = Base
+    mapper = DataMapper
 
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
@@ -21,6 +26,15 @@ class BaseRepos:
                 result.all(),
             )
         )
+
+    async def get_one(self, **kwargs):
+        query = select(self.model).filter_by(**kwargs)
+        result = await self.session.execute(query)
+        try:
+            res = result.scalar_one()
+            return self.mapper.map_to_domain_entity(res)
+        except NoResultFound:
+            raise ObjectNotFoundException
 
     async def get_one_or_none(self, **kwargs):
         query = select(self.model).filter_by(**kwargs)
@@ -38,7 +52,7 @@ class BaseRepos:
             return self.mapper.map_to_domain_entity(res)
         return None
 
-    async def add_bulk(self, data: list[BaseModel]):
+    async def add_bulk(self, data: Sequence[BaseModel]):
         stmt = insert(self.model).values([item.model_dump() for item in data])
         await self.session.execute(stmt)
 

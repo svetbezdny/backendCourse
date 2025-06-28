@@ -4,7 +4,7 @@ from src.models.hotels import HotelsOrm
 from src.models.rooms import RoomsOrm
 from src.models.users import UsersOrm
 from src.repos.mappers.base import DataMapper
-from src.schemas.bookings import BookingsAdd, BookingsRequest
+from src.schemas.bookings import BookingsAdd
 from src.schemas.facilities import Facility
 from src.schemas.hotels import Hotel
 from src.schemas.rooms import Room
@@ -28,7 +28,7 @@ class UsersDataMapper(DataMapper):
 
 class BookingsDataMapper(DataMapper):
     db_model = BookingsOrm
-    schema = BookingsAdd  # BookingsRequest
+    schema = BookingsAdd
 
 
 class FacilitiesDataMapper(DataMapper):

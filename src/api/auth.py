@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Response, status
 
 from src.api.dependencies import UserIdDep, async_db_conn
+from src.exceptions import UserAlreadyExistException
 from src.schemas.users import UserAdd, UserRequest, UserRequestAdd
 from src.services.auth import AuthService
 
@@ -16,11 +17,10 @@ async def get_me(db: async_db_conn, user_id: UserIdDep):
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register_user(db: async_db_conn, data: UserRequestAdd):
-    existing_user = await db.users.get_one_or_none(email=data.email)
-    if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Email already in use"
-        )
+    try:
+        await db.users.get_one(email=data.email)
+    except UserAlreadyExistException as ex:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=ex.detail)
     hashed_password = AuthService().hash_password(data.password)
     new_user = UserAdd(
         first_name=data.first_name,
@@ -32,7 +32,7 @@ async def register_user(db: async_db_conn, data: UserRequestAdd):
     )
     await db.users.add(new_user)
     await db.commit()
-    return {"transaction": "Successful"}
+    return {"message": "Successful"}
 
 
 @router.post("/login")

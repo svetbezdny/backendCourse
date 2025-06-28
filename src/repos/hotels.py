@@ -1,7 +1,9 @@
 from datetime import date
 
 from sqlalchemy import select
+from sqlalchemy.exc import NoResultFound
 
+from src.exceptions import HotelDoesNotExistException, MismatchedDatesException
 from src.models.hotels import HotelsOrm
 from src.models.rooms import RoomsOrm
 from src.repos.base import BaseRepos
@@ -22,6 +24,9 @@ class HotelsRepos(BaseRepos):
         title: str | None = None,
         location: str | None = None,
     ) -> list:
+        if date_from > date_to:
+            raise MismatchedDatesException
+
         rooms_ids = rooms_ids_for_booking(date_from, date_to)
         hotels_ids = (
             select(RoomsOrm.hotel_id)
@@ -45,3 +50,12 @@ class HotelsRepos(BaseRepos):
                 result.all(),
             )
         )
+
+    async def get_one(self, **kwargs):
+        query = select(self.model).filter_by(**kwargs)
+        result = await self.session.execute(query)
+        try:
+            res = result.scalar_one()
+            return self.mapper.map_to_domain_entity(res)
+        except NoResultFound:
+            raise HotelDoesNotExistException

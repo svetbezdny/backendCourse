@@ -3,6 +3,13 @@ import pytest
 from tests.conftest import get_db_null_pool
 
 
+@pytest.fixture(scope="module")
+async def delete_all_booking():
+    async for db in get_db_null_pool():
+        await db.bookings.delete()
+        await db.commit()
+
+
 @pytest.mark.parametrize(
     "room_id, date_from, date_to, status_code",
     [
@@ -11,11 +18,13 @@ from tests.conftest import get_db_null_pool
         (1, "2025-07-15", "2025-08-20", 201),
         (1, "2025-07-16", "2025-08-21", 201),
         (1, "2025-07-15", "2025-08-20", 201),
-        (1, "2025-07-15", "2025-08-21", 500),
-        (1, "2025-07-22", "2025-08-28", 500),
+        (1, "2025-07-15", "2025-08-21", 404),
+        (1, "2025-07-22", "2025-08-28", 404),
     ],
 )
-async def test_add_booking(room_id, date_from, date_to, status_code, authenticated_ac):
+async def test_add_booking(
+    room_id: int, date_from: str, date_to: str, status_code: int, authenticated_ac
+):
     response = await authenticated_ac.post(
         "/bookings",
         json={"room_id": room_id, "date_from": date_from, "date_to": date_to},
@@ -24,15 +33,8 @@ async def test_add_booking(room_id, date_from, date_to, status_code, authenticat
     if status_code == 201:
         res = response.json()
         assert isinstance(res, dict)
-        assert res["transaction"] == "Successful"
+        assert res["message"] == "Successful"
         assert "data" in res
-
-
-@pytest.fixture(scope="module")
-async def delete_all_booking():
-    async for db in get_db_null_pool():
-        await db.bookings.delete()
-        await db.commit()
 
 
 @pytest.mark.parametrize(
@@ -44,7 +46,12 @@ async def delete_all_booking():
     ],
 )
 async def test_add_and_get_bookings(
-    delete_all_booking, room_id, date_from, date_to, booked_quantity, authenticated_ac
+    delete_all_booking,
+    room_id: int,
+    date_from: str,
+    date_to: str,
+    booked_quantity: int,
+    authenticated_ac,
 ):
     response = await authenticated_ac.post(
         "/bookings",
