@@ -1,5 +1,6 @@
 from typing import Annotated, AsyncGenerator, Optional
 
+import jwt
 from fastapi import Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel
 
@@ -26,8 +27,13 @@ def get_token(request: Request) -> str:
 def get_current_user_id(
     access_token: Annotated[str, Depends(get_token)],
 ) -> Optional[int]:
-    jwt_data = AuthService().decode_jwt_token(access_token)
-    return jwt_data.get("user_id")
+    try:
+        jwt_data = AuthService().decode_jwt_token(access_token)
+        return jwt_data.get("user_id")
+    except jwt.DecodeError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
+        )
 
 
 async def get_db() -> AsyncGenerator[DBManager, None]:

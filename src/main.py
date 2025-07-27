@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
@@ -11,24 +12,26 @@ from database import async_session_maker
 from src import redis_manager
 from src.api import routers
 
+logging.basicConfig(level=logging.INFO)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     try:
         async with async_session_maker() as session:
             await session.execute(text("SELECT 1"))
-            print("### PG database startup success ###")
+            logging.info("### PG database startup success ###")
 
         await redis_manager.connect()
         FastAPICache.init(RedisBackend(redis_manager.redis), prefix="fastapi-cache")
-        print("### Redis connect success ###")
+        logging.info("### Redis connect success ###")
     except Exception as e:
-        print(f"### Error during startup: {e} ###")
+        logging.error(f"### Error during startup: {e} ###")
         raise
     yield
     await redis_manager.close()
-    print("### Redis disconnect success ###")
-    print("### Databases shutdown success ###")
+    logging.info("### Redis disconnect success ###")
+    logging.info("### Databases shutdown success ###")
 
 
 app = FastAPI(lifespan=lifespan)
@@ -46,4 +49,4 @@ for rout in routers:
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("main:app", reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

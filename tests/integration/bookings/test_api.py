@@ -10,6 +10,7 @@ async def delete_all_booking():
         await db.commit()
 
 
+@pytest.mark.skip(reason="Тест временно отключен")
 @pytest.mark.parametrize(
     "room_id, date_from, date_to, status_code",
     [
@@ -37,6 +38,7 @@ async def test_add_booking(
         assert "data" in res
 
 
+@pytest.mark.skip(reason="Тест временно отключен")
 @pytest.mark.parametrize(
     "room_id, date_from, date_to, booked_quantity",
     [

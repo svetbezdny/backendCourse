@@ -1,13 +1,13 @@
 from datetime import datetime, timedelta, timezone
 
 import jwt
-from fastapi import HTTPException, status
 from passlib.context import CryptContext
 
 from src.config import settings
+from src.services.base import BaseService
 
 
-class AuthService:
+class AuthService(BaseService):
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
     def create_jwt_token(self, data: dict) -> str:
@@ -27,12 +27,7 @@ class AuthService:
         return self.pwd_context.hash(password)
 
     def decode_jwt_token(self, token: str) -> dict:
-        try:
-            payload = jwt.decode(
-                token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
-            )
-            return payload
-        except jwt.DecodeError:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
-            )
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
+        return payload

@@ -24,7 +24,7 @@ class HotelsRepos(BaseRepos):
         title: str | None = None,
         location: str | None = None,
     ) -> list:
-        if date_from > date_to:
+        if date_from >= date_to:
             raise MismatchedDatesException
 
         rooms_ids = rooms_ids_for_booking(date_from, date_to)
