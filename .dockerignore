@@ -7,4 +7,6 @@ __pycache__/
 .DS_Store
 *.jpg
 uv.lock
-text
+hw/
+.pre-commit-config.yaml
+Dockerfile

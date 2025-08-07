@@ -13,3 +13,12 @@ run_hw: ## Hw start
 
 prepare: ## Linter for all files
 	uv run pre-commit run --all-files
+
+run-tests: ## Run pytest
+	pytest -v
+
+build: ## docker build
+	docker build -t booking .
+
+docker-run-rm: ## run container with rm after
+	docker run --rm --env-file .env -p 8000:8000 --name booking-api booking

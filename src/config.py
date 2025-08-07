@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     DB_HOST: str
     DB_LOGIN: str
     DB_PASS: str
+    DB_PORT: int
 
     SECRET_KEY: str
     ALGORITHM: str
@@ -21,7 +22,7 @@ class Settings(BaseSettings):
 
     @property
     def DB_URL(self):
-        return f"postgresql+asyncpg://{self.DB_LOGIN}:{self.DB_PASS}@{self.DB_HOST}/{self.DB_NAME}"
+        return f"postgresql+asyncpg://{self.DB_LOGIN}:{self.DB_PASS}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
     @property
     def REDIS_URL(self):

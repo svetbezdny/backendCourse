@@ -37,6 +37,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(lifespan=lifespan)
 
 
+@app.get("/health")
+async def health() -> dict:
+    return {"status": "ok"}
+
+
 @app.get("/", include_in_schema=False)
 async def root_redirect() -> RedirectResponse:
     return RedirectResponse(url="/docs")
@@ -49,4 +54,4 @@ for rout in routers:
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000)
