@@ -2,8 +2,9 @@ import logging
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Path
 from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
 from sqlalchemy import text
@@ -35,7 +36,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(lifespan=lifespan)
-
+app.mount("/static", StaticFiles(directory="src/templates"), name="static")
 
 @app.get("/health")
 async def health() -> dict:
@@ -44,7 +45,7 @@ async def health() -> dict:
 
 @app.get("/", include_in_schema=False)
 async def root_redirect() -> RedirectResponse:
-    return RedirectResponse(url="/docs")
+    return RedirectResponse(url="/static/index.html", status_code=302)
 
 
 for rout in routers:
