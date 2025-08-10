@@ -20,19 +20,20 @@ class RoomService(BaseDbService):
         return room
 
     async def create_room(self, hotel_id: int, room_data: RoomAddRequest):
-        _room_data = RoomAdd(hotel_id=hotel_id, **room_data.model_dump())
         try:
-            await self.db.hotels.get_one(id=_room_data.hotel_id)
+            await self.db.hotels.get_one(id=hotel_id)
         except HotelDoesNotExistException:
             raise
 
+        _room_data = RoomAdd(hotel_id=hotel_id, **room_data.model_dump())
         room = await self.db.rooms.add(_room_data)
 
-        rooms_fac_data = [
-            RoomFacilityAdd(room_id=room.id, facility_id=f_id)  # type: ignore
-            for f_id in room_data.facilities_ids
-        ]
-        await self.db.rooms_facilities.add_bulk(rooms_fac_data)
+        if room_data.facilities_ids:
+            rooms_fac_data = [
+                RoomFacilityAdd(room_id=room.id, facility_id=f_id)  # type: ignore
+                for f_id in room_data.facilities_ids
+            ]
+            await self.db.rooms_facilities.add_bulk(rooms_fac_data)
         await self.db.commit()
         return room
 

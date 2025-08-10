@@ -1,6 +1,7 @@
 from datetime import date
 
 from src.api.dependencies import PaginationDep
+from src.exceptions import HotelAlreadyExistException
 from src.schemas.hotels import HotelAdd, HotelPATCH
 from src.services.base import BaseDbService
 
@@ -30,6 +31,8 @@ class HotelService(BaseDbService):
         return hotel
 
     async def create_hotel(self, hotel_data: HotelAdd):
+        if await self.db.hotels.get_all(title=hotel_data.title, location=hotel_data.location):
+            raise HotelAlreadyExistException
         hotel = await self.db.hotels.add(hotel_data)
         await self.db.commit()
         return hotel

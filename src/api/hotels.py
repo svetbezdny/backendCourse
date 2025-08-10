@@ -5,7 +5,9 @@ from fastapi_cache.decorator import cache
 
 from src.api.dependencies import PaginationDep, async_db_conn
 from src.config import settings
-from src.exceptions import HotelDoesNotExistException, MismatchedDatesException
+from src.exceptions import (HotelAlreadyExistException,
+                            HotelDoesNotExistException,
+                            MismatchedDatesException)
 from src.schemas.hotels import Hotel, HotelAdd, HotelPATCH
 from src.services.hotels import HotelService
 
@@ -43,7 +45,18 @@ async def get_hotel(db: async_db_conn, hotel_id: int):
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_hotel(db: async_db_conn, hotel_data: HotelAdd):
-    hotel = await HotelService(db).create_hotel(hotel_data)
+    if len(hotel_data.title) == 0 or len(hotel_data.location) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Title and location are required",
+        )
+    try:
+        hotel = await HotelService(db).create_hotel(hotel_data)
+    except HotelAlreadyExistException as ex:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=ex.detail,
+        )
     return {
         "message": "Successful",
         "data": hotel,
@@ -52,6 +65,11 @@ async def create_hotel(db: async_db_conn, hotel_data: HotelAdd):
 
 @router.put("/{hotel_id}")
 async def put_hotel(db: async_db_conn, hotel_data: HotelAdd, hotel_id: int):
+    if len(hotel_data.title) == 0 or len(hotel_data.location) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Title or location can not be empty",
+        )
     result = await HotelService(db).put_hotel(hotel_data, hotel_id)
     if not result:
         raise HTTPException(
@@ -65,6 +83,16 @@ async def put_hotel(db: async_db_conn, hotel_data: HotelAdd, hotel_id: int):
 
 @router.patch("/{hotel_id}")
 async def patch_hotel(db: async_db_conn, hotel_data: HotelPATCH, hotel_id: int):
+    if hotel_data.title is None and hotel_data.location is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No data provided",
+        )
+    if hotel_data.title == "" or hotel_data.location == "":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Title or location can not be empty",
+        )
     result = await HotelService(db).patch_hotel(hotel_data, hotel_id)
     if not result:
         raise HTTPException(

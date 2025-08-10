@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Response, status
+from fastapi import APIRouter, HTTPException, Request, Response, status
 
 from src.api.dependencies import UserIdDep, async_db_conn
 from src.exceptions import UserAlreadyExistException
@@ -60,7 +60,9 @@ async def login_user(db: async_db_conn, data: UserRequest, response: Response):
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
-async def logout(response: Response):
+async def logout(request: Request, response: Response):
+    if not request.cookies.get("access_token"):
+        raise HTTPException(status_code=400, detail="Already logged out")
     response.delete_cookie(
         key="access_token",
         path="/",

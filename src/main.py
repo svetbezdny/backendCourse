@@ -1,8 +1,9 @@
 import logging
+import os
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
-from fastapi import FastAPI, Path
+from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi_cache import FastAPICache
@@ -26,6 +27,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         await redis_manager.connect()
         FastAPICache.init(RedisBackend(redis_manager.redis), prefix="fastapi-cache")
         logging.info("### Redis connect success ###")
+
+        os.makedirs("src/static/images", exist_ok=True)
+        logging.info("### images folder created ###")
     except Exception as e:
         logging.error(f"### Error during startup: {e} ###")
         raise

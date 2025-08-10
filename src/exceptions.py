@@ -20,6 +20,9 @@ class UserAlreadyExistException(NabronirovalException):
 class HotelDoesNotExistException(NabronirovalException):
     detail = "The hotel does not exist"
 
+class HotelAlreadyExistException(NabronirovalException):
+    detail = "Hotel with this data already exists"
+
 
 class MismatchedDatesException(NabronirovalException):
     detail = "Check-in date later than check-out date"
